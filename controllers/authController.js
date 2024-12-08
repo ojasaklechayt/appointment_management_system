@@ -1,19 +1,26 @@
-const { User } = require('../models/users');
-
+const { User } = require('../models');
 const {
     generateAccessToken,
     generateRefreshToken
 } = require('../config/jwt');
 const { Op } = require('sequelize');
 
-const validateRegistrationInput = (username, email, password, role) => {
+const validateRegistrationInput = (username, email, password, role, firstName, lastName) => {
     const errors = {};
 
-    if (!username || username.length < 3 || username.length) {
+    if (!firstName || firstName.trim().length === 0) {
+        errors.firstName = 'First name cannot be empty';
+    }
+
+    if (!lastName || lastName.trim().length === 0) {
+        errors.lastName = 'Last name cannot be empty';
+    }
+
+    if (!username || username.length < 3) {
         errors.username = 'Username must be at least 3 characters long and cannot be empty';
     }
 
-    if (!email || !/\S+@\S+\.S+/.test(email)) {
+    if (!email || !/^[\w-]+(\.[\w-]+)*@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/.test(email)) {
         errors.email = 'Invalid email address';
     }
 
@@ -33,13 +40,16 @@ const validateRegistrationInput = (username, email, password, role) => {
 
 exports.register = async (req, res) => {
     try {
-        const { username, email, password, role } = req.body;
-        const { isValid, errors } = validateRegistrationInput(username, email, password, role);
 
-        if (!isValid) {
-            return res.status(400).json({ errors });
+        const { firstName, lastName, username, email, password, role } = req.body;
+        const { isValid, errors } = validateRegistrationInput(username, email, password, role, firstName, lastName);
+
+        if (isValid === false) {
+            console.log(errors);
+            return res.status(400).json({ errors: errors });
         }
 
+        // Check if user already exists
         const existingUser = await User.findOne({
             where: {
                 [Op.or]: [
@@ -50,21 +60,29 @@ exports.register = async (req, res) => {
         });
 
         if (existingUser) {
-            return res.status(400).json({ errors: { message: 'User already exists' }, field: existingUser.username === username ? 'username' : 'email' });
+            return res.status(400).json({
+                error: 'User already exists',
+                message: 'A user with this username or email already exists.'
+            });
         }
 
+        // Create new user
         const user = await User.create({
             username,
             email,
             password,
+            firstName,
+            lastName,
             role,
             isActive: true,
             lastLogin: new Date()
         });
 
-        const accessToken = generateAccessToken();
-        const refreshToken = generateRefreshToken();
+        // Generate access and refresh tokens
+        const accessToken = generateAccessToken(user);
+        const refreshToken = generateRefreshToken(user);
 
+        // Prepare user response
         const userResponse = {
             id: user.id,
             username: user.username,
@@ -79,8 +97,9 @@ exports.register = async (req, res) => {
         });
 
     } catch (error) {
+        console.error(error);
         res.status(500).json({
-            error: 'Registration falid',
+            error: 'Registration failed',
             details: error.message
         });
     }
@@ -88,6 +107,8 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
     try {
+        console.log(req.body)
+
         const { email, password } = req.body;
 
         const user = await User.findOne({
@@ -121,6 +142,10 @@ exports.login = async (req, res) => {
             role: user.role
         };
 
+        res.set('Authorization', `Bearer ${accessToken}`);
+        res.set('Refresh-Token', refreshToken);
+        console.log(userResponse);
+
         res.json({
             user: userResponse,
             accessToken,
@@ -148,7 +173,12 @@ exports.refreshToken = async (req, res) => {
         }
 
         // Find user
-        const user = await User.findByPk(decoded.id);
+        const user = await User.findOne({
+            where: {
+                id: decoded.id
+            }
+        });
+        
         if (!user) {
             return res.status(401).json({
                 error: 'User not found'
@@ -173,8 +203,6 @@ exports.refreshToken = async (req, res) => {
 
 exports.logout = async (req, res) => {
     try {
-        // In a stateless JWT system, logout is mainly handled client-side
-        // You might want to implement token blacklisting for more security
         res.json({
             message: 'Logout successful'
         });

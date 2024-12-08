@@ -15,7 +15,7 @@ const sequelize = new Sequelize(
             acquire: 30000,
             idle: 10000
         },
-        logging: process.env.NODE_ENV === 'development' ? console.log : 'false',
+        logging: (msg) => {console.log(`[Sequelize] ${msg}`); console.log("   ")},
         dialectOptions: {
             ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
         }

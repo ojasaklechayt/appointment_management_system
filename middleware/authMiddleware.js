@@ -1,10 +1,12 @@
-const { User } = require('../models/users');
+const { User } = require('../models');
 const { verifyAccessToken } = require('../config/jwt');
 
 const authMiddleware = async (req, res, next) => {
     try {
         // Check for Authorization header
         const authHeader = req.header('Authorization');
+        console.log('Authorization Header:', authHeader);
+
         if (!authHeader) {
             return res.status(401).json({
                 error: 'No authentication token, authorization denied.'
@@ -30,7 +32,10 @@ const authMiddleware = async (req, res, next) => {
         }
 
         // Find user
-        const user = await User.findByPk(decoded.id, {
+        const user = await User.findOne({
+            where: {
+                id: decoded.id
+            },
             attributes: {
                 exclude: ['password']
             }
@@ -55,7 +60,7 @@ const authMiddleware = async (req, res, next) => {
         next();
     } catch (error) {
         res.status(401).json({
-            error: 'Authentication failed.',
+            error: 'Authentication failed',
             details: error.message
         });
     }

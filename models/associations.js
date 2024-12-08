@@ -1,4 +1,6 @@
-const { User, Availability, Appointment } = require('./index');
+const User = require('./users');
+const Availability = require('./availability');
+const Appointment = require('./appointment');
 
 function setupAssociations() {
     // User Associations

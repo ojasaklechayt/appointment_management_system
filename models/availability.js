@@ -23,27 +23,11 @@ const Availability = sequelize.define('Availability', {
     },
     startTime: {
         type: DataTypes.TIME,
-        allowNull: false,
-        validate: {
-            isTime(value) {
-                // Custom validation to ensure valid time format
-                if (!/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(value)) {
-                    throw new Error('Invalid time format');
-                }
-            }
-        }
+        allowNull: false
     },
     endTime: {
         type: DataTypes.TIME,
-        allowNull: false,
-        validate: {
-            isTime(value) {
-                // Custom validation to ensure valid time format
-                if (!/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(value)) {
-                    throw new Error('Invalid time format');
-                }
-            }
-        }
+        allowNull: false
     },
     isActive: {
         type: DataTypes.BOOLEAN,
