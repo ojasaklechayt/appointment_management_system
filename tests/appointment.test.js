@@ -14,44 +14,50 @@ describe('Appointment System end-to-end test', () => {
         await Availability.destroy({ where: {} });
         await Appointment.destroy({ where: {} });
 
-        // Register professor
+        // Register professor with dynamic data
         const professorResponse = await request(app)
             .post('/api/auth/register')
             .send({
-                username: 'prof_test',
-                email: 'prof@test.com',
+                firstName: 'Prof',
+                lastName: 'Test',
+                username: `prof_test_${Date.now()}`,
+                email: `prof_${Date.now()}@test.com`,
                 password: 'password123',
                 role: 'professor',
             });
 
-        professorToken = professorResponse.body.token;
-        professorId = professorResponse.body.id;
+        professorToken = professorResponse.body.accessToken;
+        professorId = professorResponse.body.user.id;
 
-        // Register Student 1
+        // Register Student 1 with dynamic data
         const student1Response = await request(app)
             .post('/api/auth/register')
             .send({
-                username: 'student1_test',
-                email: 'student1@test.com',
+                firstName: 'Student1',
+                lastName: 'Test',
+                username: `student1_test_${Date.now()}`,
+                email: `student1_${Date.now()}@test.com`,
                 password: 'password123',
                 role: 'student',
             });
 
-        student1Token = student1Response.body.token;
-        student1Id = student1Response.body.id;
+        student1Token = student1Response.body.accessToken;
+        student1Id = student1Response.body.user.id;
 
-        // Register Student 2
+        // Register Student 2 with dynamic data
         const student2Response = await request(app)
             .post('/api/auth/register')
             .send({
-                username: 'student2_test',
-                email: 'student2@test.com',
+                firstName: 'Student2',
+                lastName: 'Test',
+                username: `student2_test_${Date.now()}`,
+                email: `student2_${Date.now()}@test.com`,
                 password: 'password123',
                 role: 'student',
             });
 
-        student2Token = student2Response.body.token;
-        student2Id = student2Response.body.id;
+        student2Token = student2Response.body.accessToken;
+        student2Id = student2Response.body.user.id;
     });
 
     it('Professor sets availability', async () => {
@@ -59,8 +65,9 @@ describe('Appointment System end-to-end test', () => {
             .post('/api/availability/set')
             .set('Authorization', `Bearer ${professorToken}`)
             .send({
-                startTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-                endTime: new Date(Date.now() + 25 * 60 * 60 * 1000), // Tomorrow + 1 hour
+                day: 'Monday',
+                startTime: '10:00:00',
+                endTime: '11:00:00',
             });
 
         expect(response.statusCode).toBe(201);
@@ -74,6 +81,8 @@ describe('Appointment System end-to-end test', () => {
             .send({
                 professorId,
                 startTime: new Date(Date.now() + 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000), // Tomorrow + 2 hours
+                endTime: new Date(Date.now() + 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000), // Tomorrow + 3 hours
+                day: 'Monday'
             });
 
         expect(response.statusCode).toBe(201);
@@ -87,6 +96,8 @@ describe('Appointment System end-to-end test', () => {
             .send({
                 professorId,
                 startTime: new Date(Date.now() + 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000), // Same slot as Student1
+                endTime: new Date(Date.now() + 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000), // Same slot as Student1
+                day: 'Monday'
             });
 
         expect(response.statusCode).toBe(400);
@@ -105,6 +116,15 @@ describe('Appointment System end-to-end test', () => {
         const response = await request(app)
             .get('/api/appointments/student')
             .set('Authorization', `Bearer ${student1Token}`);
+
+        expect(response.statusCode).toBe(200);
+        expect(response.body.length).toBe(0);
+    });
+
+    it('Student2 checks appointments (should be none)', async () => {
+        const response = await request(app)
+            .get('/api/appointments/student')
+            .set('Authorization', `Bearer ${student2Token}`);
 
         expect(response.statusCode).toBe(200);
         expect(response.body.length).toBe(0);
