@@ -33,7 +33,6 @@ const Appointment = sequelize.define('Appointment', {
     },
     appointmentDate: {
         type: DataTypes.DATEONLY,
-        allowNull: false,
         validate: {
             isDate: true,
             isAfter: new Date().toISOString().split('T')[0] // Ensure future date
@@ -42,24 +41,10 @@ const Appointment = sequelize.define('Appointment', {
     startTime: {
         type: DataTypes.TIME,
         allowNull: false,
-        validate: {
-            isTime(value) {
-                if (!/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(value)) {
-                    throw new Error('Invalid time format');
-                }
-            }
-        }
     },
     endTime: {
         type: DataTypes.TIME,
         allowNull: false,
-        validate: {
-            isTime(value) {
-                if (!/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(value)) {
-                    throw new Error('Invalid time format');
-                }
-            }
-        }
     },
     status: {
         type: DataTypes.ENUM(

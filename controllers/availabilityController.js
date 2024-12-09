@@ -71,7 +71,6 @@ exports.getProfessorAvailability = async (req, res) => {
         const availabilities = await Availability.findAll({
             where: {
                 professorId,
-                startTime: { [Op.gt]: new Date() }
             },
             include: [{
                 model: User,
@@ -80,6 +79,7 @@ exports.getProfessorAvailability = async (req, res) => {
             }]
         });
 
+        console.log("Availabilities : ", availabilities);
         res.json(availabilities);
     } catch (error) {
         console.log(error);
